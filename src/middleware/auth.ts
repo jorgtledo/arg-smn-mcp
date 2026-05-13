@@ -7,13 +7,13 @@ export function createAuthMiddleware(apiKey: string) {
 
     if (!providedKey) {
       logRequest('AUTH', { result: 'missing_key', ip: req.ip, path: req.path });
-      res.status(401).json({ error: 'Unauthorized', message: 'Se requiere el header x-api-key.' });
+      res.status(401).json({ error: 'Unauthorized', message: 'Se requiere el encabezado x-api-key.' });
       return;
     }
 
     if (providedKey !== apiKey) {
       logRequest('AUTH', { result: 'invalid_key', ip: req.ip, path: req.path });
-      res.status(403).json({ error: 'Forbidden', message: 'API Key inválida.' });
+      res.status(403).json({ error: 'Forbidden', message: 'Clave de API inválida.' });
       return;
     }
 

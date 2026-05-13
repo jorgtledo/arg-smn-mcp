@@ -1,4 +1,4 @@
-# ── Stage 1: build ──────────────────────────────────────────────────────────
+# ── Etapa 1: compilación ────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -10,7 +10,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# ── Stage 2: runtime ─────────────────────────────────────────────────────────
+# ── Etapa 2: ejecución ───────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
 WORKDIR /app

@@ -41,21 +41,21 @@ Tormenta · Lluvia · Nevada · Viento · Viento zonda · Niebla · Polvo · Hum
 | Endpoint | Transporte | Uso |
 |----------|-----------|-----|
 | `POST /mcp` | Streamable HTTP | Cursor, Claude Desktop, clientes modernos |
-| `GET  /sse` | SSE | **n8n**, clientes legacy |
+| `GET  /sse` | SSE | **n8n**, clientes heredados |
 | `POST /messages?sessionId=<id>` | SSE (mensajes) | Parte del protocolo SSE |
-| `GET  /health` | HTTP | Health check / Docker |
+| `GET  /health` | HTTP | Verificación de estado / Docker |
 
 ---
 
 ## Autenticación
 
-Todos los endpoints MCP requieren el header `x-api-key`:
+Todos los endpoints MCP requieren el encabezado `x-api-key`:
 
 ```
 x-api-key: <tu-api-key>
 ```
 
-Si no se define `API_KEY` en el `.env`, el servidor genera una clave aleatoria al iniciar (se imprime en los logs).
+Si no se define `API_KEY` en el `.env`, el servidor genera una clave aleatoria al iniciar (se imprime en los registros).
 
 ---
 
@@ -76,15 +76,15 @@ cp .env.example .env
 ```
 
 ```env
-# Puerto del servidor HTTP (default: 3000)
+# Puerto del servidor HTTP (valor predeterminado: 3000)
 PORT=3000
 
-# API Key para autenticar las conexiones al servidor MCP.
-# Si no se define, se genera una aleatoria en cada inicio (ver logs).
+# Clave de API para autenticar las conexiones al servidor MCP.
+# Si no se define, se genera una aleatoria en cada inicio (ver registros).
 API_KEY=cambia-esta-clave-por-una-segura
 
-# Nivel de log: INFO (default) | DEBUG
-# DEBUG agrega el endpoint HTTP exacto invocado al SMN y su código de respuesta + bodies JSON.
+# Nivel de registro: INFO (valor predeterminado) | DEBUG
+# DEBUG agrega el endpoint HTTP exacto invocado al SMN, su código de respuesta y los cuerpos JSON.
 LOG_LEVEL=INFO
 ```
 
@@ -103,7 +103,7 @@ cp .env.example .env
 # Construir y levantar
 docker compose up --build -d
 
-# Ver logs
+# Ver registros
 docker compose logs -f
 ```
 
@@ -176,7 +176,7 @@ n8n usa el transporte **SSE**. Configuración en el nodo **MCP Client** de n8n:
 |-------|-------|
 | **Connection Type** | SSE |
 | **SSE URL** | `http://<host>:3000/sse` |
-| **Headers** | `x-api-key: tu-api-key` |
+| **Encabezados** | `x-api-key: tu-api-key` |
 
 > Si n8n y el servidor corren en Docker en la misma red, usar el nombre del servicio:
 > `http://arg-smn-mcp:3000/sse`
@@ -233,7 +233,7 @@ arg-smn-mcp/
 │   │   ├── index.ts              # Re-exports
 │   │   └── location.ts           # Todas las herramientas MCP
 │   ├── types/
-│   │   ├── smn.ts                # Interfaces TypeScript de los responses
+│   │   ├── smn.ts                # Interfaces TypeScript de las respuestas
 │   │   └── axios.d.ts            # Extensión de tipos Axios
 │   └── utils/
 │       └── logger.ts             # Logger configurable (INFO/DEBUG)
@@ -253,7 +253,7 @@ arg-smn-mcp/
 - **[express](https://expressjs.com/)** — servidor HTTP
 - **[axios](https://axios-http.com/)** — cliente HTTP para la API SMN
 - **[zod](https://zod.dev/)** — validación de parámetros de entrada
-- **Docker** (imagen `node:20-alpine`, multi-stage build)
+- **Docker** (imagen `node:20-alpine`, compilación multietapa)
 
 ---
 

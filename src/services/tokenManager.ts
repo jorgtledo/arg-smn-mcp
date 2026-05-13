@@ -18,7 +18,7 @@ function parseExpiry(token: string): number {
     const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { exp: number };
     return decoded.exp * 1000;
   } catch {
-    // Si no puede parsear, fuerza renovación en 55 min
+    // Si no se puede analizar, fuerza la renovación en 55 min.
     return Date.now() + 55 * 60 * 1000;
   }
 }
