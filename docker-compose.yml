@@ -1,0 +1,18 @@
+services:
+  mcp-smn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: arg-smn-mcp:latest
+    container_name: arg-smn-mcp
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
