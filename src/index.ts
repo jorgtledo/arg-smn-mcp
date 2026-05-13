@@ -20,7 +20,7 @@ app.use(express.json());
 
 const auth = createAuthMiddleware(API_KEY);
 
-// ── Health check (sin autenticación) ─────────────────────────────────────────
+// ── Verificación de estado (sin autenticación) ───────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', server: 'arg-smn-mcp', version: '1.0.0' });
 });
@@ -38,7 +38,7 @@ app.all('/mcp', auth, async (req, res) => {
   });
 });
 
-// ── SSE Transport — n8n y clientes legacy ────────────────────────────────────
+// ── Transporte SSE — n8n y clientes heredados ────────────────────────────────
 const sseTransports = new Map<string, SSEServerTransport>();
 
 app.get('/sse', auth, async (_req, res) => {
@@ -67,11 +67,11 @@ app.post('/messages', auth, async (req, res) => {
   await transport.handlePostMessage(req, res);
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── Inicio ────────────────────────────────────────────────────────────────────
 app.listen(PORT, HOST, () => {
   process.stderr.write(`\narg-smn-mcp escuchando en http://${HOST}:${PORT}\n`);
   process.stderr.write(`  [Streamable HTTP]  POST http://${HOST}:${PORT}/mcp\n`);
   process.stderr.write(`  [SSE — n8n]        GET  http://${HOST}:${PORT}/sse\n`);
   process.stderr.write(`  [Health]           GET  http://${HOST}:${PORT}/health\n`);
-  process.stderr.write(`  Autenticación:     header x-api-key requerido\n\n`);
+  process.stderr.write(`  Autenticación:     encabezado x-api-key requerido\n\n`);
 });
