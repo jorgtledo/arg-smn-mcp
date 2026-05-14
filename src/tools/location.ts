@@ -59,7 +59,7 @@ export function registerLocationTools(server: McpServer): void {
     'get_location',
     'Obtiene los detalles de una localidad meteorológica por su ID (obtenido con search_location): nombre, departamento, provincia, coordenadas y estación de referencia.',
     {
-      id: z.number().int().positive().describe('ID numérico de la localidad (obtenido con search_location)'),
+      id: z.number().int().min(1).describe('ID numérico de la localidad (obtenido con search_location)'),
     },
     async ({ id }) => {
       const start = Date.now();
@@ -86,7 +86,7 @@ export function registerLocationTools(server: McpServer): void {
     'get_weather_by_location',
     'Obtiene el clima actual (temperatura, humedad, presión, viento, visibilidad) para una localidad específica por su ID. Usar search_location para obtener el ID.',
     {
-      id: z.number().int().positive().describe('ID numérico de la localidad (obtenido con search_location)'),
+      id: z.number().int().min(1).describe('ID numérico de la localidad (obtenido con search_location)'),
     },
     async ({ id }) => {
       const start = Date.now();
@@ -113,7 +113,7 @@ export function registerLocationTools(server: McpServer): void {
     'get_forecast_by_location',
     'Obtiene el pronóstico extendido (hasta 8 días) para una localidad específica por su ID. Incluye temperatura mín/máx, humedad, probabilidad de lluvia, viento y descripción por franja horaria (madrugada, mañana, tarde, noche).',
     {
-      id: z.number().int().positive().describe('ID numérico de la localidad (obtenido con search_location)'),
+      id: z.number().int().min(1).describe('ID numérico de la localidad (obtenido con search_location)'),
     },
     async ({ id }) => {
       const start = Date.now();
@@ -140,7 +140,7 @@ export function registerLocationTools(server: McpServer): void {
     'get_warnings_by_location',
     'Obtiene las alertas y advertencias meteorológicas vigentes para una localidad por su ID (obtenido con search_location). Devuelve el nivel de alerta para los próximos días por fenómeno (tormenta, lluvia, nevada, viento, etc.) en cada franja horaria (madrugada, mañana, tarde, noche). Niveles: 1=verde/sin alerta, 2=violeta/advertencia, 3=amarillo, 4=naranja, 5=rojo.',
     {
-      id: z.number().int().positive().describe('ID numérico de la localidad (obtenido con search_location)'),
+      id: z.number().int().min(1).describe('ID numérico de la localidad (obtenido con search_location)'),
     },
     async ({ id }) => {
       const start = Date.now();
