@@ -4,7 +4,9 @@ Servidor MCP (Model Context Protocol) para la API pública del [Servicio Meteoro
 
 Expone **7 herramientas MCP** que permiten a cualquier LLM compatible (Claude, n8n, etc.) consultar datos meteorológicos de Argentina en tiempo real: búsqueda de localidades, clima actual, pronósticos extendidos y alertas/advertencias vigentes.
 
-El servidor se conecta por **red HTTP** — compatible con n8n, Cursor, Claude Desktop y cualquier cliente MCP.
+Soporta **dos modos de conexión**:
+- **HTTP** (predeterminado): servidor de red con autenticación por API key — ideal para n8n, acceso remoto o Docker Compose.
+- **stdio**: el cliente MCP lanza el contenedor directamente y se comunica por stdin/stdout — ideal para Cursor y Claude Desktop sin exponer puertos.
 
 ---
 
@@ -76,10 +78,15 @@ cp .env.example .env
 ```
 
 ```env
-# Puerto del servidor HTTP (valor predeterminado: 3000)
+# Modo de transporte MCP:
+#   http  (predeterminado) — servidor HTTP/SSE con puerto de red y API_KEY.
+#   stdio                  — stdin/stdout; sin puerto ni API_KEY.
+MCP_TRANSPORT=http
+
+# Puerto del servidor HTTP (solo aplica cuando MCP_TRANSPORT=http).
 PORT=3000
 
-# Clave de API para autenticar las conexiones al servidor MCP.
+# Clave de API (solo aplica cuando MCP_TRANSPORT=http).
 # Si no se define, se genera una aleatoria en cada inicio (ver registros).
 API_KEY=cambia-esta-clave-por-una-segura
 
@@ -132,7 +139,32 @@ npm run dev
 
 ## Conectar desde Cursor
 
-En `~/.cursor/mcp.json` (configuración global):
+### Opción A — Docker stdio (recomendado para uso local)
+
+El cliente lanza el contenedor directamente. No se expone ningún puerto y no se necesita API key.
+
+Primero, construir la imagen:
+
+```bash
+docker build -t arg-smn-mcp ./arg-smn-mcp
+```
+
+Luego, en `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "arg-smn-mcp": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
+    }
+  }
+}
+```
+
+### Opción B — HTTP (servidor corriendo en red)
+
+Requiere tener el servidor levantado con `docker compose up` o `npm start`.
 
 ```json
 {
@@ -151,7 +183,26 @@ En `~/.cursor/mcp.json` (configuración global):
 
 ## Conectar desde Claude Desktop
 
+### Opción A — Docker stdio (recomendado para uso local)
+
+```bash
+docker build -t arg-smn-mcp ./arg-smn-mcp
+```
+
 En `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "arg-smn-mcp": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
+    }
+  }
+}
+```
+
+### Opción B — HTTP (servidor corriendo en red)
 
 ```json
 {
@@ -222,7 +273,7 @@ El servidor obtiene automáticamente el JWT requerido desde `https://ws2.smn.gob
 ```
 arg-smn-mcp/
 ├── src/
-│   ├── index.ts                  # Entrypoint — servidor HTTP (Express)
+│   ├── index.ts                  # Entrypoint — modo HTTP o stdio según MCP_TRANSPORT
 │   ├── server.ts                 # McpServer + registro de tools
 │   ├── middleware/
 │   │   └── auth.ts               # Middleware de autenticación por API key
