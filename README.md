@@ -100,9 +100,6 @@ LOG_LEVEL=INFO
 ## Inicio rápido con Docker Compose
 
 ```bash
-# Ir al directorio
-cd arg-smn-mcp
-
 # Crear el .env
 cp .env.example .env
 # Editar .env con tu API_KEY
@@ -146,7 +143,7 @@ El cliente lanza el contenedor directamente. No se expone ningún puerto y no se
 Primero, construir la imagen:
 
 ```bash
-docker build -t arg-smn-mcp ./arg-smn-mcp
+docker build -t arg-smn-mcp .
 ```
 
 Luego, en `~/.cursor/mcp.json`:
@@ -186,7 +183,7 @@ Requiere tener el servidor levantado con `docker compose up` o `npm start`.
 ### Opción A — Docker stdio (recomendado para uso local)
 
 ```bash
-docker build -t arg-smn-mcp ./arg-smn-mcp
+docker build -t arg-smn-mcp .
 ```
 
 En `claude_desktop_config.json`:
@@ -239,9 +236,9 @@ services:
   mcp-smn:
     image: arg-smn-mcp:latest
     build:
-      context: ./arg-smn-mcp
+      context: .
     env_file:
-      - ./arg-smn-mcp/.env
+      - .env
     networks:
       - n8n_network   # misma red que n8n
 
