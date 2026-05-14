@@ -1,6 +1,6 @@
 {
   "name": "arg-smn-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Servidor MCP para la API del Servicio Meteorológico Nacional Argentino",
   "author": "Jorge Toledo",
   "type": "module",
