@@ -65,6 +65,7 @@ Si no se define `API_KEY` en el `.env`, el servidor genera una clave aleatoria a
 
 - **Node.js** >= 20
 - **npm** >= 9
+- **Chromium** (Playwright lo instala con `npx playwright install chromium`)
 - **Docker** (recomendado para producción)
 
 ---
@@ -105,6 +106,7 @@ cp .env.example .env
 # Editar .env con tu API_KEY
 
 # Construir y levantar
+# La imagen incluye Chromium (Playwright) para obtener el JWT detrás de Cloudflare.
 docker compose up --build -d
 
 # Ver registros
@@ -118,8 +120,9 @@ El servidor queda disponible en `http://localhost:3000`.
 ## Instalación y uso local
 
 ```bash
-# Instalar dependencias
+# Instalar dependencias y Chromium (necesario para el JWT detrás de Cloudflare)
 npm install
+npx playwright install chromium
 
 # Compilar TypeScript
 npm run build
@@ -153,7 +156,7 @@ Luego, en `~/.cursor/mcp.json`:
   "mcpServers": {
     "arg-smn-mcp": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
+      "args": ["run", "--rm", "-i", "--shm-size=1gb", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
     }
   }
 }
@@ -193,7 +196,7 @@ En `claude_desktop_config.json`:
   "mcpServers": {
     "arg-smn-mcp": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
+      "args": ["run", "--rm", "-i", "--shm-size=1gb", "-e", "MCP_TRANSPORT=stdio", "arg-smn-mcp"]
     }
   }
 }
@@ -253,7 +256,7 @@ networks:
 
 Base URL: `https://ws1.smn.gob.ar/v1`
 
-El servidor obtiene automáticamente el JWT requerido desde `https://ws2.smn.gob.ar/` y lo renueva antes de que expire.
+El servidor obtiene el JWT abriendo `https://www.smn.gob.ar/` con Chromium (Playwright), esperando a que Cloudflare deje pasar y leyendo `localStorage.token`. El token se cachea y se renueva unos minutos antes de expirar.
 
 | Endpoint SMN | Tool MCP |
 |-------------|----------|
@@ -300,8 +303,9 @@ arg-smn-mcp/
 - **[@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk)** — SDK oficial MCP
 - **[express](https://expressjs.com/)** — servidor HTTP
 - **[axios](https://axios-http.com/)** — cliente HTTP para la API SMN
+- **[playwright](https://playwright.dev/)** — Chromium para pasar Cloudflare y extraer el JWT
 - **[zod](https://zod.dev/)** — validación de parámetros de entrada
-- **Docker** (imagen `node:20-alpine`, compilación multietapa)
+- **Docker** (compilación en `node:20-bookworm`, runtime `mcr.microsoft.com/playwright`)
 
 ---
 

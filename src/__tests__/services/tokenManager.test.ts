@@ -6,8 +6,31 @@ function makeJwt(expSec: number): string {
   return `${header}.${payload}.firma-falsa`;
 }
 
-function makeHtml(token: string): string {
-  return `<html><script>localStorage.setItem('token', '${token}')</script></html>`;
+function mockPlaywright(evaluate: ReturnType<typeof vi.fn>, extras?: { waitForFunction?: ReturnType<typeof vi.fn> }) {
+  const page = {
+    goto: vi.fn().mockResolvedValue(undefined),
+    waitForFunction: extras?.waitForFunction ?? vi.fn().mockResolvedValue(undefined),
+    evaluate,
+  };
+  const context = {
+    newPage: vi.fn().mockResolvedValue(page),
+  };
+  const browser = {
+    newContext: vi.fn().mockResolvedValue(context),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
+  const launch = vi.fn().mockResolvedValue(browser);
+
+  vi.doMock('playwright', () => ({
+    chromium: { launch },
+  }));
+  vi.doMock('../../utils/logger.js', () => ({
+    logDebugHttp: vi.fn(),
+    logDebugResponse: vi.fn(),
+    logDebug: vi.fn(),
+  }));
+
+  return { launch, browser, page };
 }
 
 describe('tokenManager.getToken', () => {
@@ -23,21 +46,10 @@ describe('tokenManager.getToken', () => {
     vi.clearAllMocks();
   });
 
-  it('obtiene el token desde el HTML y lo devuelve', async () => {
+  it('obtiene el token desde localStorage y lo devuelve', async () => {
     const expSec = Math.floor(Date.now() / 1000) + 3600;
     const fakeJwt = makeJwt(expSec);
-
-    vi.doMock('axios', () => ({
-      default: {
-        get: vi.fn().mockResolvedValue({ status: 200, data: makeHtml(fakeJwt) }),
-        isAxiosError: vi.fn().mockReturnValue(false),
-        create: vi.fn(),
-      },
-    }));
-    vi.doMock('../../utils/logger.js', () => ({
-      logDebugHttp: vi.fn(),
-      logDebugResponse: vi.fn(),
-    }));
+    mockPlaywright(vi.fn().mockResolvedValue(fakeJwt));
 
     const { getToken } = await import('../../services/tokenManager.js');
     const token = await getToken();
@@ -45,22 +57,10 @@ describe('tokenManager.getToken', () => {
     expect(token).toBe(fakeJwt);
   });
 
-  it('usa el caché en llamadas sucesivas sin rehacer la petición HTTP', async () => {
+  it('usa el caché en llamadas sucesivas sin reabrir el navegador', async () => {
     const expSec = Math.floor(Date.now() / 1000) + 3600;
     const fakeJwt = makeJwt(expSec);
-    const axiosGet = vi.fn().mockResolvedValue({ status: 200, data: makeHtml(fakeJwt) });
-
-    vi.doMock('axios', () => ({
-      default: {
-        get: axiosGet,
-        isAxiosError: vi.fn().mockReturnValue(false),
-        create: vi.fn(),
-      },
-    }));
-    vi.doMock('../../utils/logger.js', () => ({
-      logDebugHttp: vi.fn(),
-      logDebugResponse: vi.fn(),
-    }));
+    const { launch } = mockPlaywright(vi.fn().mockResolvedValue(fakeJwt));
 
     const { getToken } = await import('../../services/tokenManager.js');
 
@@ -69,7 +69,7 @@ describe('tokenManager.getToken', () => {
 
     expect(t1).toBe(fakeJwt);
     expect(t2).toBe(fakeJwt);
-    expect(axiosGet).toHaveBeenCalledOnce();
+    expect(launch).toHaveBeenCalledOnce();
   });
 
   it('renueva el token cuando está dentro del margen de expiración (< 5 min)', async () => {
@@ -78,22 +78,8 @@ describe('tokenManager.getToken', () => {
     const expiredJwt = makeJwt(expiredSec);
     const freshJwt = makeJwt(freshSec);
 
-    const axiosGet = vi
-      .fn()
-      .mockResolvedValueOnce({ status: 200, data: makeHtml(expiredJwt) })
-      .mockResolvedValueOnce({ status: 200, data: makeHtml(freshJwt) });
-
-    vi.doMock('axios', () => ({
-      default: {
-        get: axiosGet,
-        isAxiosError: vi.fn().mockReturnValue(false),
-        create: vi.fn(),
-      },
-    }));
-    vi.doMock('../../utils/logger.js', () => ({
-      logDebugHttp: vi.fn(),
-      logDebugResponse: vi.fn(),
-    }));
+    const evaluate = vi.fn().mockResolvedValueOnce(expiredJwt).mockResolvedValueOnce(freshJwt);
+    const { launch } = mockPlaywright(evaluate);
 
     const { getToken } = await import('../../services/tokenManager.js');
 
@@ -102,21 +88,16 @@ describe('tokenManager.getToken', () => {
 
     const t2 = await getToken();
     expect(t2).toBe(freshJwt);
-    expect(axiosGet).toHaveBeenCalledTimes(2);
+    expect(launch).toHaveBeenCalledTimes(2);
   });
 
-  it('lanza error cuando el HTML no contiene el token', async () => {
-    vi.doMock('axios', () => ({
-      default: {
-        get: vi.fn().mockResolvedValue({ status: 200, data: '<html>sin token aquí</html>' }),
-        isAxiosError: vi.fn().mockReturnValue(false),
-        create: vi.fn(),
+  it('lanza error cuando localStorage no contiene el token', async () => {
+    mockPlaywright(
+      vi.fn().mockResolvedValue(null),
+      {
+        waitForFunction: vi.fn().mockRejectedValue(new Error('page.waitForFunction: Timeout 45000ms exceeded')),
       },
-    }));
-    vi.doMock('../../utils/logger.js', () => ({
-      logDebugHttp: vi.fn(),
-      logDebugResponse: vi.fn(),
-    }));
+    );
 
     const { getToken } = await import('../../services/tokenManager.js');
 
@@ -125,33 +106,15 @@ describe('tokenManager.getToken', () => {
 
   it('usa 55 min de expiración cuando el JWT no tiene payload decodificable', async () => {
     const invalidJwt = 'cabecera.carga-invalida-no-es-base64url.firma';
+    const { launch } = mockPlaywright(vi.fn().mockResolvedValue(invalidJwt));
 
-    vi.doMock('axios', () => ({
-      default: {
-        get: vi.fn().mockResolvedValue({ status: 200, data: makeHtml(invalidJwt) }),
-        isAxiosError: vi.fn().mockReturnValue(false),
-        create: vi.fn(),
-      },
-    }));
-    vi.doMock('../../utils/logger.js', () => ({
-      logDebugHttp: vi.fn(),
-      logDebugResponse: vi.fn(),
-    }));
-
-    const before = Date.now();
     const { getToken } = await import('../../services/tokenManager.js');
     const token = await getToken();
-    const after = Date.now();
 
     expect(token).toBe(invalidJwt);
 
-    // Verificar que el caché persiste (la segunda llamada no vuelve a pedir HTTP)
-    // dado que la expiración fijada es 55 min en el futuro
-    const { default: axios } = await import('axios');
-    const callsBefore = vi.mocked(axios.get).mock.calls.length;
+    const callsBefore = launch.mock.calls.length;
     await getToken();
-    expect(vi.mocked(axios.get).mock.calls.length).toBe(callsBefore);
-
-    void before; void after;
+    expect(launch.mock.calls.length).toBe(callsBefore);
   });
 });
