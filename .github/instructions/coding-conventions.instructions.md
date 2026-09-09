@@ -68,7 +68,7 @@ server.tool(
 
 ### Servicios
 - Los servicios van en `src/services/`. Cada servicio es un módulo con funciones exportadas (no clases).
-- `tokenManager.ts` gestiona el JWT: exporta solo `getToken()`. No llamar `getToken()` desde las tools — solo desde `smnClient.ts`.
+- `tokenManager.ts` gestiona el JWT: exporta solo `getToken()`. Usa Playwright (Chromium) para pasar Cloudflare y leer `localStorage`. No llamar `getToken()` desde las tools — solo desde `smnClient.ts`.
 
 ## Estructura de Tipos (`src/types/smn.ts`)
 

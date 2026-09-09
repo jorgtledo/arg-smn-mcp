@@ -60,3 +60,7 @@ export function logDebugResponse(url: string, status: number, durationMs: number
     write('DEBUG', 'BODY←  ', JSON.stringify(body));
   }
 }
+
+export function logDebug(label: string, message: string): void {
+  write('DEBUG', label, message);
+}
